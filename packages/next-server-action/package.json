@@ -1,16 +1,39 @@
 {
   "name": "next-server-action",
+  "private": false,
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {},
+  "description": "A robust library for creating action routing, middleware, and input validation in Next.js app router projects.",
+  "author": "Abhishek Prajapati",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bhishekprajapati/next-server-action"
+  },
+  "main": "dist",
+  "types": "dist",
+  "scripts": {
+    "build": "tsc",
+    "ts-check": "tsc --noEmit"
+  },
   "peerDependencies": {
     "next": ">=14.0.0"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "next",
+    "nextjs",
+    "nextjs server action",
+    "react server components",
+    "rsc",
+    "server action routing",
+    "server action input validation",
+    "server action middleware",
+    "react actions",
+    "next actions",
+    "type safe",
+    "nextjs type safe server actions"
+  ],
   "license": "ISC",
   "dependencies": {
+    "server-only": "^0.0.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {

@@ -1,3 +1,4 @@
+import "server-only";
 import { z, ZodTypeAny, type ZodSchema } from "zod";
 import { cookies, headers } from "next/headers";
 import { redirect, notFound } from "next/navigation";
@@ -80,7 +81,7 @@ type ActionRouterConfig<TErrorCodes> = {
 // #region Implementation
 export class ActionRouter<
   TErrorCodes,
-  TContext extends { inputs: any } = { inputs: null }
+  TContext extends { inputs: any } = { inputs: null },
 > {
   private schemaIdx: number = -1;
   /**
