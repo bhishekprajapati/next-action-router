@@ -21,8 +21,6 @@ routing defined in a single project.
 
 ## Installation
 
-To use My Library in your Next.js project, follow these steps:
-
 ```sh
 npm install next-server-action zod
 ```
@@ -143,9 +141,11 @@ router
 
 ```ts
 // app/actions/blogs.ts
+"use server";
+
 import { router } from "@/lib/action.router.ts";
 
-const blogsRouter = router
+export const blogsRouter = router
   .use(async ({ context }) => {
     console.log("Blog middleware 1");
     console.log("Will run 1st");
@@ -167,6 +167,8 @@ OR
 
 ```ts
 // app/actions/products.ts
+"use server";
+
 import { router } from "@/lib/action.router.ts";
 
 const productRouter = router
@@ -191,6 +193,8 @@ const productRouter = router
 
 ```ts
 // app/actions/blogs.ts
+"use server";
+
 import { router } from "@/lib/action.router.ts";
 
 const blogsRouter = router
@@ -210,7 +214,7 @@ const blogsRouter = router
     return context;
   });
 
-const findAllBlogs = blogsRouter
+export const findAllBlogs = blogsRouter
   .use(async ({ context }) => {
     console.log("Find all blog method middleware 1");
     return context;
@@ -228,6 +232,7 @@ OR
 
 ```ts
 // app/actions/products.ts
+"use server";
 import { router } from "@/lib/action.router.ts";
 
 const productRouter = router
@@ -247,7 +252,7 @@ const productRouter = router
     return context;
   });
 
-const findAllProducts = productRouter
+export const findAllProducts = productRouter
   .use(async ({ context }) => {
     console.log("Find all products method middleware 1");
     return context;
