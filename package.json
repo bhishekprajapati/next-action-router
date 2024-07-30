@@ -1,13 +1,22 @@
 {
   "name": "next-server-action",
   "version": "0.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
+  "description": "A robust library for creating action routing, middleware, and input validation in Next.js app router projects.",
+  "author": "Abhishek Prajapati",
+  "keywords": [
+    "next",
+    "nextjs",
+    "nextjs server action",
+    "react server components",
+    "rsc",
+    "server action routing",
+    "server action input validation",
+    "server action middleware",
+    "react actions",
+    "next actions",
+    "type safe",
+    "nextjs type safe server actions"
+  ],
   "license": "ISC",
   "devDependencies": {
     "prettier": "3.3.3",
