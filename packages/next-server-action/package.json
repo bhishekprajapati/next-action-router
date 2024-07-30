@@ -8,8 +8,8 @@
     "type": "git",
     "url": "https://github.com/bhishekprajapati/next-server-action"
   },
-  "main": "dist",
-  "types": "dist",
+  "main": "./",
+  "types": "./",
   "scripts": {
     "build": "tsc",
     "ts-check": "tsc --noEmit"
