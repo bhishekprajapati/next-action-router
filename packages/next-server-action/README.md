@@ -57,7 +57,7 @@ import { ActionRouter } from "next-server-action/server";
 
 /**
  * This router will server as an entry point for the
- * incoming action requests. However, you can as many
+ * incoming action requests. However, you can create as many
  * routers as you need for your project.
  */
 export const router = new ActionRouter();
