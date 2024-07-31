@@ -1,267 +1,46 @@
-# ✨ Next Server Action
+> For documentation: Head over to https://next-server-action.netlify.app
 
-A lightweight robust library for creating action routing, middleware, and input validation in Next.js (v14+) app router projects.
+# A little background
 
-The goal of this library is to support maximum code reusability among different actions through out the project. Most of the api
-style is similar to the express if you're already familiar with
-express, then you can pick this up easily.
+I've had experience building with `Strapi` and `Express.js`,
+and what I really loved about both projects is their routing
+and middleware systems.
 
-## How action routing works?
+These patterns offer several benefits, including:
 
-The basic idea behind action routing is simple. The action router lets you define a request-response lifecycle for any action request. You can choose a single rooter as a base for the action request-response lifecycles or even have mutiple
-routing defined in a single project.
+- Enhanced code readability
+- Increased modularity
+- Cleaner API syntax
+- More robust implementations
+- Maximum code reusability
 
-![Action routing visual flow diagram](https://github.com/bhishekprajapati/next-server-action/blob/main/public/action-routing.png?raw=true)
+With the introduction of `server actions` in `Next.js`,
+writing APIs has become much easier.
+However, the advanced routing and middleware patterns
+I valued in Strapi and Express.js are still not natively supported by Next.js.
 
-## Table of Contents
+A few months ago, when I started building a full-stack e-commerce website,
+I quickly realized the need for these abstractions.
+Unfortunately, I couldn't find any simple and useful solutions.
+So, I created a bare minimum implementation of this library for my project.
+Drawing on the lessons and ideas from that draft implementation,
+I developed this library with more advanced, type-safe features.
 
-- [Installation](#installation)
-- [Features](#features)
-- [Usage](#usage)
+I've got more ideas but for now let's get started!
 
-## Installation
+## Aim
 
-```sh
-npm install next-server-action zod
-```
-
-OR
-
-```sh
-pnpm install next-server-action zod
-```
+> This library aims to simplify working with nextjs server actions. One can easily
+> compose complex server actions using the provided abstractions.
 
 ## Features
 
-- ✅ **Action Routing**: Simplify the process of defining and handling server-side actions by express like routing mechanism.
-- ✅ **Middleware Support**: Easily register and execute middleware functions with context passing.
-- ✅ **Input Validation**: Leverage Zod schemas for robust input validation, ensuring data integrity.
-- ✅ **Error Handling**: Robust error handling mechanisms with type safe error codes.
-- ✅ **Type Safety**: Extensive use of TypeScript for type-safe operations and improved developer experience.
-
-## Usage
-
-In your nextjs v14 app router project. I'll just give you an example in the way I prefer to organize the code.
-This example is for `app router` (without using src directory). However, you can use the src directory or even organize in any way you want.
-
-### Basic Usage
-
-```ts
-// lib/action.router.ts
-/**
- * import {ActionRouter} from the server directory.
- */
-import { ActionRouter } from "next-server-action/server";
-
-/**
- * This router will server as an entry point for the
- * incoming action requests. However, you can create as many
- * routers as you need for your project.
- */
-export const router = new ActionRouter();
-```
-
-```ts
-// app/actions/blogs.ts
-"use server";
-import { router } from "@/lib/action.router.ts";
-
-// fake blogs
-const blogs = [
-  {
-    id: 1,
-    title: "Blog 1",
-  },
-  {
-    id: 2,
-    title: "Blog 2",
-  },
-];
-
-export const findAllBlogs = router.run(async (request, response) =>
-  response.data(blogs)
-);
-```
-
-```tsx
-"use client";
-import { findAllBlogs } from "@/app/actions/blogs.ts";
-
-const Button = () => (
-  <button
-    onCLick={async () => {
-      const response = await findAllBlogs();
-      if (response.success) {
-        console.log(response.data);
-      } else {
-        console.error(response.error);
-      }
-    }}
-  >
-    Blogs
-  </button>
-);
-```
-
-### Register global middlewares
-
-**NOTE**: Each middleware registered at any level must need to return
-the updated context. The updated context will be provided as input
-to the next middleware from the stack.
-
-Apart from the context, you can accesas cookies and headers from the request.
-
-**USE CASE**: Middleware is the best place to extend or mutate the context
-object as the request progresses through chain.
-
-```ts
-// lib/action.router.ts
-import { ActionRouter } from "next-server-action/server";
-
-export const router = new ActionRouter();
-router
-  .use(async ({ context, cookies, headers }) => {
-    console.log("Global middleware 1");
-    console.log("Will run 1st");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Global middleware 2");
-    console.log("Will run 2nd");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Global middleware 3");
-    console.log("Will run 3rd");
-    return context;
-  });
-```
-
-### Register sub-action router level middlewares
-
-```ts
-// app/actions/blogs.ts
-"use server";
-
-import { router } from "@/lib/action.router.ts";
-
-export const blogsRouter = router
-  .use(async ({ context }) => {
-    console.log("Blog middleware 1");
-    console.log("Will run 1st");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Blog middleware 2");
-    console.log("Will run 2nd");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Blog middleware 3");
-    console.log("Will run 3rd");
-    return context;
-  });
-```
-
-OR
-
-```ts
-// app/actions/products.ts
-"use server";
-
-import { router } from "@/lib/action.router.ts";
-
-const productRouter = router
-  .use(async ({ context }) => {
-    console.log("Product middleware 1");
-    console.log("Will run 1st");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Product middleware 2");
-    console.log("Will run 2nd");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Product middleware 3");
-    console.log("Will run 3rd");
-    return context;
-  });
-```
-
-### Register method level middlewares
-
-```ts
-// app/actions/blogs.ts
-"use server";
-
-import { router } from "@/lib/action.router.ts";
-
-const blogsRouter = router
-  .use(async ({ context }) => {
-    console.log("Blog middleware 1");
-    console.log("Will run 1st");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Blog middleware 2");
-    console.log("Will run 2nd");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Blog middleware 3");
-    console.log("Will run 3rd");
-    return context;
-  });
-
-export const findAllBlogs = blogsRouter
-  .use(async ({ context }) => {
-    console.log("Find all blog method middleware 1");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Find all blog method middleware 2");
-    return context;
-  })
-  .run(async () => {
-    // action handler
-  });
-```
-
-OR
-
-```ts
-// app/actions/products.ts
-"use server";
-import { router } from "@/lib/action.router.ts";
-
-const productRouter = router
-  .use(async ({ context }) => {
-    console.log("Product middleware 1");
-    console.log("Will run 1st");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Product middleware 2");
-    console.log("Will run 2nd");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Product middleware 3");
-    console.log("Will run 3rd");
-    return context;
-  });
-
-export const findAllProducts = productRouter
-  .use(async ({ context }) => {
-    console.log("Find all products method middleware 1");
-    return context;
-  })
-  .use(async ({ context }) => {
-    console.log("Find all products method middleware 2");
-    return context;
-  })
-  .run(async () => {
-    // action handler
-  });
-```
+- ✅ Action Routing
+- ✅ Error Code management
+- ✅ Error Handling
+- ✅ Input Validation
+- ✅ Light weight
+- ✅ Middleware Support
+- ✅ Snappy DX
+- ✅ Supports both js/ts projects
+- ✅ Type Safety
