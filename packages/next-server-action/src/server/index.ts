@@ -76,14 +76,29 @@ type ActionRouterConfig<TErrorCodes> = {
     codes: TErrorCodes;
   };
 };
+
+type InputReturnType<
+  TContext extends { inputs: any },
+  TErrorCodes,
+  T extends ZodTypeAny,
+> = Omit<
+  ActionRouter<
+    TErrorCodes,
+    ReplaceKeyValue<TContext, "inputs", Readonly<z.infer<T>>>
+  >,
+  "input" | "branch"
+>;
 // #endregion Types end
 
 // #region Implementation
 export class ActionRouter<
   TErrorCodes,
-  TContext extends { inputs: any } = { inputs: null },
+  TContext extends { inputs: any } = { inputs: void },
 > {
-  private schemaIdx: number = -1;
+  /**
+   * @private This is a private property. Do not touch this!
+   */
+  _schemaIdx: number = -1;
   /**
    * @private This is a private property. Do not touch this!
    */
@@ -113,22 +128,19 @@ export class ActionRouter<
    * to validate the inputs provided to the
    * server action on the client side.
    *
-   * NOTE: You must only call this function if you're expecting
-   * inputs from the client. Do not invoke this function multiple times.
+   * NOTE: Once you call this then you can't create new branches. you
+   * must end the branch here and register your action handler.
    */
   input<T extends ZodTypeAny>(
     schema: T
-  ): ActionRouter<
-    TErrorCodes,
-    ReplaceKeyValue<TContext, "inputs", Readonly<z.infer<T>>>
-  > {
+  ): InputReturnType<TContext, TErrorCodes, T> {
     if (this._schema) {
       throw Error(
         "Only one input call is allowed in a single action router chain."
       );
     }
     this._schema = schema;
-    this.schemaIdx = this._middlewares.length;
+    this._schemaIdx = this._middlewares.length;
     return this as any;
   }
 
@@ -141,7 +153,7 @@ export class ActionRouter<
   ): Promise<TContext> {
     // only if schema exists
     const hasSchema = !!this._schema;
-    const shouldValidateIntially = this.schemaIdx === 0;
+    const shouldValidateIntially = this._schemaIdx === 0;
 
     // flag to keep track if inputs are already verified
     // during the execution of the middlewares
@@ -158,7 +170,7 @@ export class ActionRouter<
     // starting out with the initial context
     let context: any = { inputs: initialInput };
     for (let i = 0; i < this._middlewares.length; ++i) {
-      if (hasSchema && !hasValidated && i === this.schemaIdx) {
+      if (hasSchema && !hasValidated && i === this._schemaIdx) {
         // @ts-expect-error
         context["inputs"] = await this._schema.parseAsync(params);
       }
@@ -225,6 +237,29 @@ export class ActionRouter<
         );
       }
     };
+  }
+
+  /**
+   * This function creates a new branch in action routing tree.
+   * Call this when you need a new sub action router or
+   * you need to end the branch to create a exportable server action.
+   */
+  branch(): this {
+    /**
+     * To successfully create a new branch.
+     * step-1: create a new router instance
+     * step-2: copy the internal state
+     *         1. config
+     *         2. middleware stack
+     *         3. input schema
+     *         4. input schema registration index
+     */
+    const branch = new ActionRouter(this._config);
+    branch._config = this._config;
+    branch._middlewares = [...this._middlewares];
+    branch._schema = this._schema;
+    branch._schemaIdx = this._schemaIdx;
+    return branch as any;
   }
 }
 // #endregion Implementaion end

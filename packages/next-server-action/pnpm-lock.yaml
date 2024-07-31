@@ -11,9 +11,6 @@ dependencies:
   server-only:
     specifier: ^0.0.1
     version: 0.0.1
-  zod:
-    specifier: ^3.23.8
-    version: 3.23.8
 
 devDependencies:
   '@types/node':
@@ -28,6 +25,9 @@ devDependencies:
   typescript:
     specifier: ^5.5.4
     version: 5.5.4
+  zod:
+    specifier: ^3.23.8
+    version: 3.23.8
 
 packages:
 
@@ -315,4 +315,4 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
-    dev: false
+    dev: true
