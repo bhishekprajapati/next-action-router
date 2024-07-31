@@ -1,0 +1,238 @@
+import { Callout } from "nextra/components";
+
+# Action Middlewares
+
+Technically, All middleware types have same signature and they all serves
+the same purpose. The category of middleware gets decided on how you setup the logic flow (aka. action routing chain).
+
+You can register a action middleware function by calling `use` method on your action router
+instance and providing a function that return promise of context.
+
+**Execution Order**: Middlewares get executed in the order in which they are chained together.
+
+> 📝 **NOTE**:
+> For example project structure reference, click **<a style={{ textDecoration: 'underline' }} href="/concepts#file-conventions">here</a>**
+
+There are three different category of middlewares that you can
+register on a action router instance.
+
+- <a
+    style={{ textDecoration: "underline" }}
+    href="/concepts/middlewares/#global-middlewares"
+  >
+    Global middlewares
+  </a>
+- <a
+    style={{ textDecoration: "underline" }}
+    href="/concepts/middlewares/#global-middlewares"
+  >
+    Sub-Router middlewares
+  </a>
+- <a
+    style={{ textDecoration: "underline" }}
+    href="/concepts/middlewares/#global-middlewares"
+  >
+    Server action level middlewares
+  </a>
+
+Let's explore each of them one by one!
+
+## Middleware function
+
+As I mentioned it above, there's no technical difference between the middleware categories. Regardless,
+what you call it under the hood they have same signature, purpose and constraints.
+
+For type definitions <a style={{ textDecoration: "underline" }} href="/types">click here</a>.
+
+Every middleware will receieve an object of type `ActionRequest` as argument containing
+the `context`, `cookies` and `headers` for the running action request.
+
+```ts
+import { cookies, headers } from "next/headers";
+
+type ActionRequest<TContext> = {
+  context: TContext;
+  headers: ReturnType<typeof headers>;
+  cookies: ReturnType<typeof cookies>;
+};
+
+type ActionMiddleware<TContext, TReturn> = (
+  request: ActionRequest<TContext>
+) => Promise<TReturn>;
+```
+
+<Callout type="error">
+  **Caveat**: All the chained middleware functions must need to return a context
+  once they're done executing their logic. This is important and helpful to extend
+  the context object as the action requests progresses from one root to the
+  final action handler. Even if you're not mutating the context then just returned the
+  original context.
+
+The returned value can only be a primitive object. Like `Array`, `Map`, etc are not allowed.
+
+</Callout>
+
+The returned value from a middleware will serve as context for the next chained middleware.
+
+**Default context:** `{ inputs: null }`
+
+## Global Middlewares
+
+In short, The middlewares registered at the very root of the router instance are called as
+global Middlewares and they will run for every single action request hitting the same router instance.
+
+> **UseCase**: Request logging, rate limiting, auth check, etc
+
+```ts
+// lib/action.router.ts
+import { ActionRouter } from "next-server-action/server";
+
+export const rootRouter = new ActionRouter({
+  // router config
+})
+  .use(async ({ context }) => {
+    console.log("Global middleware 1");
+    return context;
+  })
+  .use(async ({ context }) => {
+    console.log("Global middleware 2");
+    return context;
+  })
+  .use(async ({ context }) => {
+    console.log("Global middleware 3");
+    return context;
+  });
+```
+
+## Sub-Router middlewares
+
+Now let's say you have two different resources in your application like **blogs** and **products**.
+You want to run some specific code for all the blogs related server actions but not for products related server actions,
+we can call that specific code as sub action router level middleware.
+
+We need two more sub action routers for blog and product server actions.
+Creating a sub-router is as simple as re-assigning the current action router
+instance to a new variable. For mental model, you can think of it as a tree starting
+from root and then branching off in different directions as needed.
+I call this as **branching the action router**. Anyways, you get the point!
+
+```ts
+// lib/action.router.ts
+import { ActionRouter } from "next-server-action/server";
+
+export const router = new ActionRouter({
+  // router config
+})
+  .use(async ({ context }) => {
+    console.log("Global middleware 1");
+    return context;
+  })
+  .use(async ({ context }) => {
+    console.log("Global middleware 2");
+    return context;
+  })
+  .use(async ({ context }) => {
+    console.log("Global middleware 3");
+    return context;
+  });
+
+// branching off from root router
+export const blogsRouter = rootRouter
+  .use(async ({ context }) => {
+    console.log("Blog middleware 1");
+    return context;
+  })
+  .use(async ({ context }) => {
+    console.log("Blog middleware 2");
+    return context;
+  })
+  .use(async ({ context }) => {
+    console.log("Blog middleware 3");
+    return context;
+  });
+
+// branching off from root router
+const productsRouter = router
+  .use(async ({ context }) => {
+    console.log("Product middleware 1");
+    return context;
+  })
+  .use(async ({ context }) => {
+    console.log("Product middleware 2");
+    return context;
+  })
+  .use(async ({ context }) => {
+    console.log("Product middleware 3");
+    return context;
+  });
+```
+
+If a action request hits this action router.
+Then here's the **execution order output**
+
+- Global middleware 1
+- Global middleware 2
+- Global middleware 3
+
+## Server action level middlewares
+
+To be honest, in most cases this might be an over kill but can be helpful
+in situations like where you want to reuse the existing action middleware. That's all!
+
+Unlike the root/global middlewares, the middlewares which are registered very close
+the to final action handler can be called as method/server action level middleware.
+
+Example: for your blogs resource, you are implementing a `deleteBlog` method and you want
+run a middleware that check if the caller have right permission to delete the requested blog.
+
+```ts
+// app/actions/index.ts
+"use server";
+
+import { blogsRouter, productsRouter } from "@/lib/action.router.ts";
+
+export const deleteBlog = blogsRouter
+  .use(async ({ context }) => {
+    // ... some code to check if caller is allowed
+    console.log("Delete blog server action middleware 1");
+    return context;
+  })
+  .run(async () => {
+    // final action handler
+  });
+
+export const deleteProduct = productRouter
+  .use(async ({ context }) => {
+    // similarly, you can register any middleware here
+    // which only run for this server action method.
+    console.log("Delete product server action middleware 1");
+    return context;
+  })
+  .run(async () => {
+    // final action handler
+  });
+```
+
+Nothing to worry about, `run` method we'll cover this method soon.
+
+## Final Execution Order
+
+If client invokes `deleteBlog` server action. The following will be order:
+
+- Global middleware 1
+- Global middleware 2
+- Global middleware 3
+- Blog middleware 1
+- Blog middleware 2
+- Blog middleware 3
+- Delete blog server action middleware 1
+
+If client invokes `deleteProduct` server action. The following will be order:
+
+- Global middleware 1
+- Global middleware 2
+- Global middleware 3
+- Product middleware 1
+- Product middleware 2
+- Product middleware 3
+- Delete product server action middleware 1

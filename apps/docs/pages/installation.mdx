@@ -1,0 +1,46 @@
+import { Callout } from "nextra/components";
+
+## Compatibility
+
+Current version is only tested for `nextjs v14 (app router)`. Both javascript and typescript projects written
+in nextjs v14 are Compatible. Support for nextjs v13 and v15 will roll out sooner.
+
+<Callout type="warning">
+Requirements:
+- Next.js ^14
+- React >= 18.2.0
+- TypeScript >= 5
+- Zod
+
+</Callout>
+
+## Required dependencies
+
+Since `next-server-action` uses zod for input validation.
+So make sure to install zod in your project.
+
+```bash
+npm install zod
+```
+
+<div style={{ textAlign: "center" }}>OR</div>
+
+```sh
+pnpm install zod
+```
+
+## Final Installation
+
+```sh
+npm install next-server-action
+```
+
+<div style={{ textAlign: "center" }}>OR</div>
+
+```sh
+pnpm install next-server-action
+```
+
+Now, you're all set to compose actions for your project but before that
+I encourage you to go though the concepts to get the working understanding
+of the library abstractions.

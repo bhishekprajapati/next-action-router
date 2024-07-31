@@ -1,0 +1,43 @@
+# Basic Usage
+
+```ts
+// app/actions/blogs.ts
+"use server";
+import { router } from "@/lib/action.router.ts";
+
+// fake blogs
+const blogs = [
+  {
+    id: 1,
+    title: "Blog 1",
+  },
+  {
+    id: 2,
+    title: "Blog 2",
+  },
+];
+
+export const findAllBlogs = router.run(async (request, response) =>
+  response.data(blogs)
+);
+```
+
+```tsx
+"use client";
+import { findAllBlogs } from "@/app/actions/blogs.ts";
+
+const Button = () => (
+  <button
+    onCLick={async () => {
+      const response = await findAllBlogs();
+      if (response.success) {
+        console.log(response.data);
+      } else {
+        console.error(response.error);
+      }
+    }}
+  >
+    Blogs
+  </button>
+);
+```

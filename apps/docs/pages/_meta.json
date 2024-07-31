@@ -1,0 +1,34 @@
+{
+  "index": {
+    "title": "Intro and Features",
+    "theme": {
+      "footer": false
+    }
+  },
+  "installation": {
+    "title": "Installation",
+    "theme": {
+      "footer": false
+    }
+  },
+  "concepts": {
+    "title": "Concepts (10-15 mins)",
+    "theme": {
+      "footer": false
+    }
+  },
+  "usage": {
+    "title": "Usage",
+    "theme": {
+      "footer": false
+    }
+  },
+  "examples": {
+    "title": "Examples",
+    "type": "page"
+  },
+  "api": {
+    "title": "API Reference",
+    "type": "page"
+  }
+}

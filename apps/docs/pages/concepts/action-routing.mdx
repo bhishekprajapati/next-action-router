@@ -1,0 +1,53 @@
+# Action Router
+
+`ActionRouter` is the main component behind all this magic ✨. This creates
+an entry point for the associated action request. In simple words, the server actions
+which are defined on a particular `instance` of `ActionRouter` will start their execution
+journey from that router instance.
+
+> 📝 **NOTE**:
+> For example project structure reference, click **<a style={{ textDecoration: 'underline' }} href="/concepts#file-conventions">here</a>**
+
+## Quick initalization
+
+```ts
+// lib/action.router.ts
+
+import { ActionRouter } from "next-server-action/server";
+
+// let's call this as root router
+export const rootRouter = new ActionRouter();
+```
+
+This is enough to get you started with the action routing
+but there's a slightly better way to initalize the router instance
+if you want to have type inference for error codes in your react client
+components. Don't worry
+if didn't get the point, you'll get it just keep reading.
+
+## Better Initalization (optional)
+
+```ts
+// lib/action.router.ts
+
+import { ActionRouter } from "next-server-action/server";
+
+// let's call this as root router
+export const rootRouter = new ActionRouter({
+  error: {
+    // predefined error codes at router instance level
+    codes: {
+      unauthorized: "You are unauthorized",
+      "not-found": "Requested resource not found",
+      "rate-limit-exceeded":
+        "Rate limit exceeded. please try again after some time",
+    },
+  },
+});
+```
+
+While initalizing router instance, you can define all the error codes
+which can be used to return descriptive error messages to the client and
+cool thing about this is error codes are inferred everywhere even
+on the react components. This is really helpfull to write more robust
+components and enhance user experience. This is really cool, I just love ❤️ it!

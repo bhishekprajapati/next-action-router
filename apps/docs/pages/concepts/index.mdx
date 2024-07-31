@@ -1,0 +1,63 @@
+import { Callout } from "nextra/components";
+
+<Callout type="info">
+  📝 **NOTE:** If you're already familiar with the routing and middleware
+  patterns, feel free to skip this page and start from
+  <a
+    style={{ display: "inline", textDecoration: "underline" }}
+    href="/concepts/action-routing"
+  >
+    <span>here</span>
+  </a>
+</Callout>
+
+If you're looking for compatibility and installation guide then head over to
+**<a style={{ textDecoration: 'underline' }} href="/installation">here</a>**
+
+Go through the concepts page by page in order and top to bottom on each page
+to get good understanding of the concepts. Skip only when you already know the concept.
+This won't take you long. If you've already user nextjs server actions and have some understanding
+of express like routing and middleware pattern then this shouldn't take you more than
+10-15 mins.
+
+## File Conventions
+
+All the code examples in this documentation use **nextjs v14 `app` router
+without src directory**. You're absolutely free to use `src` directory or
+even organize your files as you see fit.
+
+> For reference: Example Project structure
+
+```dir
+my-nextjs-app/
+├── .next/
+├── ...
+├── app/
+│ ├── actions/ <- exportable server actions will go here
+│ ├── ...
+│ ├── page.tsx
+├── components/
+├── lib/  <- We'll keep action router here
+├── ...
+├── tsconfig.json
+└── README.md
+```
+
+## How action routing works?
+
+The basic idea behind action routing is simple. The action router
+lets you define a request-response lifecycle for any action request.
+You can choose to create a single action router per project or create
+multiple incrementally as needed.
+
+![Action routing visual flow diagram](https://github.com/bhishekprajapati/next-server-action/blob/main/public/action-routing.png?raw=true)
+
+<div
+  style={{
+    textAlign: "center",
+    marginTop: "1rem",
+    textDecoration: "underline",
+  }}
+>
+  A picture is worth a thousand words
+</div>

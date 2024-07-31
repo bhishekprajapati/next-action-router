@@ -1,0 +1,32 @@
+{
+  "index": {
+    "title": "Start here",
+    "theme": {
+      "footer": false
+    }
+  },
+  "action-routing": {
+    "title": "1. Action routing",
+    "theme": {
+      "footer": false
+    }
+  },
+  "middlewares": {
+    "title": "2. Middlewares",
+    "theme": {
+      "footer": false
+    }
+  },
+  "input-validation": {
+    "title": "3. Input Validation",
+    "theme": {
+      "footer": false
+    }
+  },
+  "action-handler": {
+    "title": "4. Action handler",
+    "theme": {
+      "footer": false
+    }
+  }
+}
