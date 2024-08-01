@@ -1,1 +1,1 @@
-> For documentation: Head over to https://next-server-action.netlify.app
+> For documentation: Head over to https://next-action-router.netlify.app

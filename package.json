@@ -1,14 +1,27 @@
 {
-  "name": "next-server-action",
+  "name": "next-action-router",
   "version": "0.0.0",
   "description": "A robust library for creating action routing, middleware, and input validation in Next.js app router projects.",
   "author": "Abhishek Prajapati",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhishekprajapati/next-action-router.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/next-action-router/issues"
+  },
+  "homepage": "https://next-action-router.netlify.app/",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
   "keywords": [
     "next",
     "nextjs",
+    "rsc",
+    "nextjs action router",
+    "nextjs server action router",
     "nextjs server action",
     "react server components",
-    "rsc",
     "server action routing",
     "server action input validation",
     "server action middleware",
