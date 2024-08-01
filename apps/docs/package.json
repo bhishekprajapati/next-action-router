@@ -1,7 +1,7 @@
 {
   "name": "docs",
   "version": "1.0.0",
-  "description": "next-server-action documentation",
+  "description": "next-action-router documentation",
   "main": "index.js",
   "scripts": {
     "dev": "next",
