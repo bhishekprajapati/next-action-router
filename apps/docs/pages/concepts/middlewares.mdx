@@ -1,5 +1,6 @@
 import { Callout } from "nextra/components";
 import { Tabs } from "nextra/components";
+import Link from "@components/Link";
 
 # Action Middlewares
 
@@ -13,28 +14,13 @@ in the chain/action routing tree.
 **Execution Order**: Middlewares get executed in the order in which they are chained together.
 
 > 📝 **NOTE**:
-> For example project structure reference, click **<a style={{ textDecoration: 'underline', color: 'lightblue' }} href="/concepts#file-conventions">here</a>**
+> For example project structure reference, click <Link href="/concepts#file-conventions">here</Link>
 
 Middlewares can be categorized in three different levels:
 
-- <a
-    style={{ textDecoration: "underline" }}
-    href="/concepts/middlewares/#global-middlewares"
-  >
-    Global level middlewares
-  </a>
-- <a
-    style={{ textDecoration: "underline" }}
-    href="/concepts/middlewares/#global-middlewares"
-  >
-    Sub-Router level middlewares
-  </a>
-- <a
-    style={{ textDecoration: "underline" }}
-    href="/concepts/middlewares/#global-middlewares"
-  >
-    Server action level middlewares
-  </a>
+- Global level middlewares
+- Sub-Router level middlewares
+- Server action level middlewares
 
 Let's explore each of them one by one!
 
@@ -64,7 +50,7 @@ type ActionMiddleware<TContext, TReturn> = (
 **Base context:** `{ inputs: void }` (Initial value)
 
 **Context**: It's just a plain old javaScript object
-(aka <a style={{ textDecoration: "underline", color: 'lightblue' }} href="https://stackoverflow.com/questions/52453407/the-difference-between-object-and-plain-object-in-javascript" target="\_blank">POJO</a>).
+(aka <Link type="external"  href="https://stackoverflow.com/questions/52453407/the-difference-between-object-and-plain-object-in-javascript" target="\_blank">POJO</Link>).
 Intially having only "inputs" as a key. We'll talk about this in detail in upcoming pages.
 
 **⚠️ important**: For now the only thing that you need to know is that **always return a pojo**
@@ -116,7 +102,7 @@ global Middlewares and they will run for every single action request hitting the
 
 > **UseCase**: Request logging, rate limiting, auth check, etc
 
-```ts
+```ts copy
 // lib/action.router.ts
 import { ActionRouter } from "next-action-router/server";
 
@@ -154,8 +140,8 @@ We need two more sub action routers for blog and product server actions.
 Creating a sub-action router (aka branched action router) is as simple as calling `branch` method
 and re-assigning the returned action router instance to a new variable.
 
-For mental model, you can think of it as a <a style={{ color:"lightblue", textDecoration: "underline" }} href="/concepts#how-action-routing-works" target="\_blank">tree starting
-from root and then branching off in different directions as needed.</a>
+For mental model, you can think of it as a <Link href="/concepts#how-action-routing-works">tree starting
+from root and then branching off in different directions as needed.</Link>
 I call this as **branching the action router**. Anyways, you get the point!
 
 ```ts

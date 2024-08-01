@@ -23,6 +23,12 @@
       "footer": false
     }
   },
+  "types": {
+    "title": "Types",
+    "theme": {
+      "footer": false
+    }
+  },
   "examples": {
     "title": "Examples",
     "type": "page"
