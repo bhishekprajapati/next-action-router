@@ -1,7 +1,7 @@
 {
   "name": "next-action-router",
   "private": false,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A robust library for creating action routing, middleware, and input validation in Next.js app router projects.",
   "author": "Abhishek Prajapati",
   "homepage": "https://next-action-router.netlify.app",
