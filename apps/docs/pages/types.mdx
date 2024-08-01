@@ -1,0 +1,78 @@
+# Internal Type reference
+
+## ActionRouterConfig
+
+```ts
+type ActionRouterConfig<TErrorCodes> = {
+  error: {
+    codes: TErrorCodes;
+  };
+};
+```
+
+## ActionRequest
+
+Represents an action request object with a context.
+It contains the information regarding an action request.
+Each action request will have it's own action request object.
+
+```ts
+type ActionRequest<TContext> = {
+  context: TContext;
+  headers: ReturnType<typeof headers>;
+  cookies: ReturnType<typeof cookies>;
+};
+```
+
+## ActionResponse
+
+Each action requests will have it's own action
+response object. Registered action handlers can invoke these
+provided methods from this object to send data (helper method), error (helper method)
+or even throwing redirects or not found errors to the client;
+
+```ts
+type ActionSuccessResponse<TData> = {
+  success: true;
+  data: TData;
+};
+
+type ActionErrorResponse<TCode> = {
+  success: false;
+  error: {
+    code: TCode;
+    message: string;
+  };
+};
+
+type ActionResponse<TErrorCodes> = {
+  data: <TData>(data: TData) => ActionSuccessResponse<TData>;
+  error: <TCode extends TErrorCodes>(
+    code: TCode,
+    message?: string
+  ) => ActionErrorResponse<TCode>;
+  createError: <T extends string>(
+    code: T,
+    message: string
+  ) => ActionErrorResponse<T>;
+  redirect: typeof redirect;
+  notFound: typeof notFound;
+};
+```
+
+## ActionMiddleware
+
+```ts
+type ActionMiddleware<TContext, TReturn> = (
+  request: ActionRequest<TContext>
+) => Promise<TReturn>;
+```
+
+## ActionHandler
+
+```ts
+type ActionHandler<TContext, TErrorCodes, TReturn> = (
+  request: ActionRequest<TContext>,
+  response: ActionResponse<TErrorCodes>
+) => Promise<TReturn>;
+```

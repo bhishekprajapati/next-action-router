@@ -1,4 +1,172 @@
+import { Tabs } from "nextra/components";
+
 # Action Handler
 
 > 📝 **NOTE**:
 > For example project structure reference, click **<a style={{ textDecoration: 'underline' }} href="/concepts#file-conventions">here</a>**
+
+> For type reference, click <a href="/types#actionhandler" style={{textDecoration: "underline", color:"lightblue"}}>here</a>
+
+Action handler are the async functions responsible for returning responsible
+back to the caller/client.
+
+Register action handler functions by calling `run` in the final branch. In simple
+words, once the `run` is called then you cannot branch out more. That's it!
+
+Back in our final branch of blogs action router,
+
+```ts
+// app/actions/index.ts
+"use server";
+
+import { blogsRouter } from "@/lib/action.router.ts";
+
+const deleteBlogSchema = z.object({
+  id: z.string(),
+});
+
+export const deleteBlog = blogsRouter
+  .branch()
+  .input(deleteBlogSchema)
+  .use(async ({ context }) => {
+    // ✨ context.inputs: { id: string }
+    const blog = await callToDatabse(context.inputs.id);
+    // extending the context
+    return {
+      blog: blog as Blog,
+      ...context,
+    };
+  })
+  .run(async (request, repsonse) => {
+    // to access the final context
+    console.log(request.context);
+
+    // ✨ inference magic
+    // request.context.blog: Blog
+    // request.context.inputs: { id: string }
+  });
+```
+
+## Action Handler Params
+
+### ActionRequest Param
+
+On the response object, you have various methods to send information to caller. However,
+you'are free to return anything from your action handlers and the returned type will be inferred
+on the caller's side.
+
+```ts // app/actions/index.ts "use server";
+import { blogsRouter } from "@/lib/action.router.ts";
+
+const deleteBlogSchema = z.object({
+  id: z.string(),
+});
+
+export const deleteBlog = blogsRouter
+  .branch()
+  .input(deleteBlogSchema)
+  .use(async ({ context }) => {
+    // ✨ context.inputs: { id: string }
+    const blog = await callToDatabse(context.inputs.id);
+    // extending the context
+    return {
+      blog: blog as Blog,
+      ...context,
+    };
+  })
+  .run(async (request, repsonse) => {
+    // to access the final context
+    console.log(request.context);
+
+    // ✨ inference magic
+    // request.context.blog: Blog
+    // request.context.inputs: { id: string }
+  });
+```
+
+### ActionResponse Param
+
+<Tabs
+  items={[
+    "response.data",
+    "response.error",
+    "response.createError",
+    "response.notFound",
+    "response.redirect",
+  ]}
+>
+  <Tabs.Tab>
+
+    ```ts
+    // ... clipped
+    .run(async (request, repsonse) => {
+      // to access the final context
+      console.log(request.context);
+      return response.data({ key: "value" });
+    });
+    ```
+
+  </Tabs.Tab>
+  
+  <Tabs.Tab>
+
+    ```ts
+      // ... clipped
+      .run(async (request, repsonse) => {
+        // to access the final context
+        console.log(request.context);
+        // error message will be pulled out from your router config based on the error code you specify
+        // ✨ inference magic
+        // Error codes will inferred from your action router config
+        return response.error("unauthorized");
+    });
+    ```
+
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+  
+  ```ts
+    .run(async (request, repsonse) => {
+      // to access the final context
+      console.log(request.context);
+      // if you want create a new error code just for this server action
+      // without registering it to the global instance. then you can
+      // create error codes just in time with this method.
+
+      // ✨ inference magic
+      // The caller will get type inference for the newly created error code.
+      return response.createError("shoo-shoo", "Error message: Restricted area");
+    });
+    ```
+
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+
+    **Reference:** https://nextjs.org/docs/app/api-reference/functions/not-found
+
+    ```ts
+    .run(async (request, repsonse) => {
+      if ("some-condition-is-true") {
+        response.notFound();
+      }
+    });
+    ```
+
+  </Tabs.Tab>
+
+    <Tabs.Tab>
+
+    **Reference:** https://nextjs.org/docs/app/api-reference/functions/redirect
+
+    ```ts
+    .run(async (request, repsonse) => {
+      if ("some-condition-is-true") {
+        response.redirect("url");
+      }
+    });
+    ```
+
+  </Tabs.Tab>
+</Tabs>

@@ -1,4 +1,48 @@
+import { Callout } from "nextra/components";
+
 # Input Validation
 
 > 📝 **NOTE**:
 > For example project structure reference, click **<a style={{ textDecoration: 'underline' }} href="/concepts#file-conventions">here</a>**
+
+So now that we have created our **exportable server actions** but how to
+get user input and validate it?
+
+For this you gonna need a zod schema for the required inputs by the final branch. Back in our
+final branch, call `input` method and provide a zod schema.
+The inputs will be validated internally and validated inputs will be included in context as `context.inputs = <validated-inputs>`.
+
+```ts
+// app/actions/index.ts
+"use server";
+
+import { blogsRouter } from "@/lib/action.router.ts";
+
+const deleteBlogSchema = z.object({
+  id: z.string(),
+});
+
+export const deleteBlog = blogsRouter
+  .branch()
+  .input(deleteBlogSchema)
+  .use(async ({ context }) => {
+    // ✨ context.inputs: { id: string }
+    const blog = await callToDatabse(context.inputs.id);
+    // extending the context
+    return {
+      blog: blog,
+      ...context,
+    };
+  })
+  .run(async () => {
+    // final action handler
+  });
+```
+
+<Callout type="warning">
+  If you're expecting inputs from the user then you must call the `input` method
+  only in the final branch where you're creating an exportable server action.
+  Because of the limitation of the current implementation, this is not enforced
+  neither on type level nor on runtime level. You manually have to make sure of
+  that.
+</Callout>

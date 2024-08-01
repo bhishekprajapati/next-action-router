@@ -1,4 +1,5 @@
 import { Callout } from "nextra/components";
+import { Tabs } from "nextra/components";
 
 ## Compatibility
 
@@ -7,10 +8,10 @@ in nextjs v14 are Compatible. Support for nextjs v13 and v15 will roll out soone
 
 <Callout type="warning">
 Requirements:
-- Next.js ^14
+- Next.js ^v14
 - React >= 18.2.0
-- TypeScript >= 5
-- Zod
+- TypeScript ^v5 (optional)
+- Zod ^v3
 
 </Callout>
 
@@ -19,27 +20,41 @@ Requirements:
 Since `next-server-action` uses zod for input validation.
 So make sure to install zod in your project.
 
-```bash
-npm install zod
+<Tabs items={['npm', 'pnpm']}>
+  <Tabs.Tab>
+
+```bash copy
+  npm install zod
 ```
 
-<div style={{ textAlign: "center" }}>OR</div>
-
-```sh
-pnpm install zod
+  </Tabs.Tab>
+  <Tabs.Tab>
+ 
+```bash copy
+  pnpm install zod
 ```
+
+  </Tabs.Tab>
+</Tabs>
 
 ## Final Installation
 
-```sh
-npm install next-server-action
+<Tabs items={['npm', 'pnpm']}>
+  <Tabs.Tab>
+
+```bash copy
+  npm install next-server-action
 ```
 
-<div style={{ textAlign: "center" }}>OR</div>
+  </Tabs.Tab>
+  <Tabs.Tab>
 
-```sh
-pnpm install next-server-action
+```bash copy
+  pnpm install next-server-action
 ```
+
+  </Tabs.Tab>
+</Tabs>
 
 Now, you're all set to compose actions for your project but before that
 I encourage you to go though the concepts to get the working understanding
