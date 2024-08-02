@@ -10,6 +10,9 @@ import { isNotFoundError } from "next/dist/client/components/not-found";
 type ReplaceKeyValue<T extends {}, K extends keyof T, V> = Omit<T, K> &
   Record<K, V>;
 
+type NextCookies = ReturnType<typeof cookies>;
+type NextHeaders = ReturnType<typeof headers>;
+
 /**
  * Represents an action request object with a context.
  * It contains the information regarding an action request.
@@ -17,8 +20,8 @@ type ReplaceKeyValue<T extends {}, K extends keyof T, V> = Omit<T, K> &
  */
 type ActionRequest<TContext> = {
   context: TContext;
-  headers: ReturnType<typeof headers>;
-  cookies: ReturnType<typeof cookies>;
+  headers: NextHeaders;
+  cookies: NextCookies;
 };
 
 type ActionSuccessResponse<TData> = {
@@ -151,7 +154,9 @@ export class ActionRouter<
    * the final context
    */
   private async executeMiddlewareStack(
-    params: TContext["inputs"]
+    params: TContext["inputs"],
+    cookies: NextCookies,
+    headers: NextHeaders
   ): Promise<TContext> {
     // only if schema exists
     const hasSchema = !!this._schema;
@@ -179,7 +184,7 @@ export class ActionRouter<
       const middleware = this._middlewares[i];
       // each middleware gets the output of the last middleware
       // as input context through args
-      context = await middleware({ context });
+      context = await middleware({ context, cookies, headers });
     }
 
     return context;
@@ -214,13 +219,17 @@ export class ActionRouter<
 
       try {
         // action request object creation
-        const requestHeaders = headers();
-        const requestCookies = cookies();
-        const context = await this.executeMiddlewareStack(params);
+        const nextHeaders = headers();
+        const nextCookies = cookies();
+        const context = await this.executeMiddlewareStack(
+          params,
+          nextCookies,
+          nextHeaders
+        );
         const actionRequest: ActionRequest<TContext> = {
           context,
-          cookies: requestCookies,
-          headers: requestHeaders,
+          cookies: nextCookies,
+          headers: nextHeaders,
         };
 
         // 3. invoke handler with injected dependencies
