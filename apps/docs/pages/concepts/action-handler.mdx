@@ -116,10 +116,17 @@ export const deleteBlog = blogsRouter
       .run(async (request, repsonse) => {
         // to access the final context
         console.log(request.context);
-        // error message will be pulled out from your router config based on the error code you specify
+
         // ✨ inference magic
         // Error codes will inferred from your action router config
-        return response.error("unauthorized");
+
+        // with the pre-defined message
+        if ("some-condition") {
+          return response.error("unauthorized");
+        } else {
+          // overriding the pre-defined message for the code `unauthorized`
+          return response.error("unauthorized", "new-message");
+        }
     });
     ```
 
