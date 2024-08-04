@@ -4,3 +4,4 @@ node_modules
 *.tsx
 tsconfig.json
 __test__
+jest.config.js

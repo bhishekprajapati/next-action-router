@@ -8,6 +8,7 @@ import { isNotFoundError } from "next/dist/client/components/not-found";
 export const BASE_CONTEXT = { inputs: null };
 export const INTIAL_SCHEMA_IDX = -1;
 export const INTIAL_SCHEMA = null;
+export const INITIAL_MIDDLEWARE_STACK = [];
 
 // #region Types
 // type utils
@@ -18,9 +19,8 @@ type NextCookies = ReturnType<typeof cookies>;
 type NextHeaders = ReturnType<typeof headers>;
 
 /**
- * Represents an action request object with a context.
- * It contains the information regarding an action request.
- * Each action request will have it's own action request object.
+ * `ActionRequest` contains request related information
+ * like `context`, `cookies` and `headers`.
  */
 type ActionRequest<TContext> = {
   context: TContext;
@@ -28,11 +28,17 @@ type ActionRequest<TContext> = {
   cookies: NextCookies;
 };
 
+/**
+ * `schema` of a successful response of an action call.
+ */
 type ActionSuccessResponse<TData> = {
   success: true;
   data: TData;
 };
 
+/**
+ * `schema` of a error response of an action call.
+ */
 type ActionErrorResponse<TCode> = {
   success: false;
   error: {
@@ -40,38 +46,48 @@ type ActionErrorResponse<TCode> = {
     message: string;
   };
 };
+
 /**
- * Each action requests will have it's own action
- * response object. Registered action handlers can invoke these
- * provided methods from this object to send data, error
- * or even throwing redirects or not found errors to the client;
+ * `ActionResponse` object is a collection of helper methods.
  */
 type ActionResponse<TErrorCodes> = {
+  /**
+   * @returns formatted(JSON) data response
+   */
   data: <TData>(data: TData) => ActionSuccessResponse<TData>;
+  /**
+   * @returns formatted(JSON) error response
+   */
   error: <TCode extends TErrorCodes>(
     code: TCode,
     message?: string
   ) => ActionErrorResponse<TCode>;
+  /**
+   * @returns Helper to create error with new code just in time.
+   */
   createError: <T extends string>(
     code: T,
     message: string
   ) => ActionErrorResponse<T>;
+  /**
+   * @see {redirect}
+   */
   redirect: typeof redirect;
+  /**
+   * @see {notFound}
+   */
   notFound: typeof notFound;
 };
 
 /**
- * Action router middleware function. Every middleware needs to
- * return the mutated or updated context. which can be consumed
- * as input by the next middleware from stack.
+ * Read more: Docs: [`Middlewares`](https://next-action-router.netlify.app/concepts/middlewares)
  */
 type ActionMiddleware<TContext, TReturn> = (
   request: ActionRequest<TContext>
 ) => Promise<TReturn>;
 
 /**
- * The action handler is responsible for the execution
- * of main logic. when the client invokes the server action.
+ * Read more: Docs: [`Action Handler`](https://next-action-router.netlify.app/concepts/action-handler)
  */
 type ActionHandler<TContext, TErrorCodes extends PropertyKey, TReturn> = (
   request: ActionRequest<TContext>,
@@ -113,17 +129,20 @@ export class ActionRouter<
   /**
    * @private This is a private property. Do not touch this!
    */
-  _middlewares: Array<any> = [];
+  _middlewares: Array<any> = INITIAL_MIDDLEWARE_STACK;
+  /**
+   * @private This is a private property. Do not touch this!
+   */
   private _config: ActionRouterConfig<TErrorCodes>;
+
   constructor(config?: ActionRouterConfig<TErrorCodes>) {
     this._config = config ?? ({ error: { codes: {} } } as any);
   }
 
   /**
-   * Register a action middleware.
-   * Middlewares will run in the order of registration.
-   * @returns Always return a context from your middlewares.
-   * You can return the same context or even the updated one.
+   * Registers an action middleware.
+   *
+   * Read more: Docs: [`Input Validation`](https://next-action-router.netlify.app/concepts/middlewares)
    */
   use<TReturn extends { inputs: any } = { inputs: null }>(
     middleware: ActionMiddleware<TContext, TReturn>
@@ -133,12 +152,12 @@ export class ActionRouter<
   }
 
   /**
-   * Register a zod schema which will be used
-   * to validate the inputs provided to the
-   * server action on the client side.
+   * Registers a zod schema for input validation.
+   * Should only be called in the last branch means the
+   * branch where you're going to call `run` method and
+   * export your server action
    *
-   * NOTE: Once you call this then you can't create new branches. you
-   * must end the branch here and register your action handler.
+   * Read more: Docs: [`Input Validation`](https://next-action-router.netlify.app/concepts/input-validation)
    */
   input<T extends ZodTypeAny>(
     schema: T
@@ -173,8 +192,7 @@ export class ActionRouter<
 
     // validate inputs if schema is registered before all the middlewares
     if (hasSchema && shouldValidateIntially) {
-      // @ts-expect-error
-      initialInput = await this._schema.parseAsync(params);
+      initialInput = await this._schema?.parseAsync(params);
       hasValidated = true;
     }
 
@@ -204,8 +222,9 @@ export class ActionRouter<
   }
 
   /**
-   * Register an action handler function. Which gets executed
-   * when the client invokes the server action from the client side.
+   * Register an action handler function.
+   *
+   * Read more: Docs: [`run`](https://next-action-router.netlify.app/concepts/action-handler)
    */
   run<TReturn>(handler: ActionHandler<TContext, keyof TErrorCodes, TReturn>) {
     return async (params: TContext["inputs"]) => {
@@ -267,22 +286,19 @@ export class ActionRouter<
    * This function creates a new branch in action routing tree.
    * Call this when you need a new sub action router or
    * you need to end the branch to create a exportable server action.
+   *
+   * Read more: Docs: [`branch` usage](https://next-action-router.netlify.app/concepts/middlewares#middleware-levels)
    */
   branch(): this {
-    /**
-     * To successfully create a new branch.
-     * step-1: create a new router instance
-     * step-2: copy the internal state
-     *         1. config
-     *         2. middleware stack
-     *         3. input schema
-     *         4. input schema registration index
-     */
+    // step-1: create a new router instance
     const branch = new ActionRouter(this._config);
+
+    // step-2: copy all the internal state
     branch._config = this._config;
     branch._middlewares = [...this._middlewares];
     branch._schema = this._schema;
     branch._schemaIdx = this._schemaIdx;
+
     return branch as any;
   }
 }
