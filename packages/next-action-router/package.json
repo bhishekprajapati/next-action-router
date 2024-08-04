@@ -1,7 +1,7 @@
 {
   "name": "next-action-router",
   "private": false,
-  "version": "1.2.4",
+  "version": "1.2.8",
   "description": "A robust library for creating action routing, middleware, and input validation in Next.js app router projects.",
   "author": "Abhishek Prajapati",
   "homepage": "https://next-action-router.netlify.app",
@@ -13,7 +13,8 @@
   "types": "./",
   "scripts": {
     "build": "tsc",
-    "ts-check": "tsc --noEmit"
+    "ts-check": "tsc --noEmit",
+    "test": "jest"
   },
   "peerDependencies": {
     "next": "^14.0.0",
@@ -38,9 +39,12 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.12",
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.4",
     "typescript": "^5.5.4",
     "zod": "^3.23.8"
   }

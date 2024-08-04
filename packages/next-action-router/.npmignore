@@ -3,4 +3,4 @@ node_modules
 *.log
 *.tsx
 tsconfig.json
-
+__test__
