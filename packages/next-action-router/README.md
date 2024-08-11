@@ -1,1 +1,45 @@
-> For documentation: Head over to https://next-action-router.netlify.app
+> For documentation head over to https://next-action-router.netlify.app
+
+# A little background
+
+I've had experience building with `Strapi` and `Express.js`,
+and what I really loved about both projects is their routing
+and middleware systems.
+
+These patterns offer several benefits, including:
+
+- Enhanced code readability
+- Increased modularity
+- Cleaner API syntax
+- More robust implementations
+- Maximum code reusability
+
+With the introduction of `server actions` in `Next.js`,
+writing APIs has become much easier.
+However, the advanced routing and middleware patterns
+I valued in Strapi and Express.js are still not natively supported by Next.js.
+
+A few months ago, when I started building a full-stack e-commerce website,
+I quickly realized the need for these abstractions.
+Unfortunately, I couldn't find **any simple** and useful solutions.
+So, I created a bare minimum implementation of this library for my project.
+Drawing on the lessons and ideas from that draft implementation,
+I developed this library with more advanced, type-safe features.
+
+I've got more ideas but for now let's get started!
+
+## Aim
+
+> This library aims to simplify working with nextjs server actions. One can easily
+> compose complex server actions using the provided abstractions.
+
+## Features
+
+- 🔀 Action Routing
+- ⚙️ Input Validation
+- 🪶 Light weight
+- 🗒️ Logging
+- ⛓️ Middleware Chaining
+- 🔥 Robust error handling
+- ⚡ Snappy DX
+- 🇹 Type Safety
