@@ -23,6 +23,11 @@
       "footer": false
     }
   },
+  "logging": {
+    "theme": {
+      "footer": false
+    }
+  },
   "types": {
     "title": "Types",
     "theme": {
