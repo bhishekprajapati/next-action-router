@@ -56,7 +56,9 @@ On the response object, you have various methods to send information to caller. 
 you'are free to return anything from your action handlers and the returned type will be inferred
 on the caller's side.
 
-```ts // app/actions/index.ts "use server";
+```ts
+// app/actions/index.ts
+"use server";
 import { blogsRouter } from "@/lib/action.router.ts";
 
 const deleteBlogSchema = z.object({
@@ -99,7 +101,7 @@ export const deleteBlog = blogsRouter
   <Tabs.Tab>
 
     ```ts
-    // ... clipped
+    // --snip--
     .run(async (request, repsonse) => {
       // to access the final context
       console.log(request.context);
@@ -112,7 +114,7 @@ export const deleteBlog = blogsRouter
   <Tabs.Tab>
 
     ```ts
-      // ... clipped
+      // --snip--
       .run(async (request, repsonse) => {
         // to access the final context
         console.log(request.context);

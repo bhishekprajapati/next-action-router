@@ -1,0 +1,15 @@
+# `ActionRouter` config
+
+Providing config while creating a new `ActionRouter` instance is optional
+
+type `object` (key-value pair object)
+
+| Property  | Type                                | Purpose                                                                               | Required?                   | Default                 |
+| --------- | ----------------------------------- | ------------------------------------------------------------------------------------- | --------------------------- | ----------------------- |
+| `error`   | `{ codes: Record<string, string> }` | Error related configuration                                                           | `true` iff providing config | not-applicable          |
+| `logging` | `ActionLoggerLevels`                | Configure logging levels                                                              | `false`                     | `info`, `error`, `warn` |
+| `name`    | `string`                            | Sets a name to action router instance. The name will be reflected in logs if enabled. | `false`                     | `root:router`           |
+
+**Good to know:** If you're providing config without the intent of passing `error` prop,
+then you must pass `{ codes: {} }` as value to the error prop. This applies only if
+you're providing config to your action router instance.

@@ -1,0 +1,30 @@
+import Link from "../components/Link";
+
+## ActionRouter
+
+| Instance member (public) | Purpose                             | Concept reference                                                       |
+| ------------------------ | ----------------------------------- | ----------------------------------------------------------------------- |
+| `use`                    | Registers a middleware function     | <Link href="/concepts/middlewares#middleware-function">Read more</Link> |
+| `branch`                 | Creates a branch diversion          | <Link href="/concepts/middlewares#middleware-levels">Read more</Link>   |
+| `input`                  | Registers a zod schema              | <Link href="/concepts/input-validation">Read more</Link>                |
+| `run`                    | Registers a action handler function | <Link href="/concepts/action-handler">Read more</Link>                  |
+
+## ActionHandler params
+
+### `ActionRequest` object
+
+| Prop      | Type                                                                                                         | Purpose                                                                                                                                            | Initial Value                                                                                               |
+| --------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `context` | Initially, `{ inputs: void }`, for rest of the middlewares and action handlers it depends upon chaining flow | Contains context information for each request like `inputs` and can be extended to inject dependencies like database instance, helper methods, etc | `{ inputs: null }`                                                                                          |
+| `cookies` | `ReadonlyRequestCookies`                                                                                     | Provides request cookies                                                                                                                           | <Link type="external" href="https://nextjs.org/docs/app/api-reference/functions/headers">`headers()`</Link> |
+| `headers` | `ReadonlyHeaders`                                                                                            | Provides request headers                                                                                                                           | <Link type="external" href="https://nextjs.org/docs/app/api-reference/functions/cookies">`cookies()`</Link> |
+
+### `ActionResponse` object
+
+| Prop          | Type                                                                                           | Purpose                                                                                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data`        | Function, `(data: any) => ({ success: true, data })`                                           | Takes any data and returns a data response object                                                                                                                     |
+| `error`       | Function, `(code: string, message?: string) => ({ success: false, error: { code, message } })` | Takes error code which is pre-defined in router config and a optional message override to the default message of the error code and returns an error response object. |
+| `createError` | `Function`                                                                                     | Works just like `error` function but useful when you need to create an inferrable error code just in time                                                             |
+| `notFound`    | `Function`                                                                                     | Throws <Link type="external" href="https://nextjs.org/docs/app/api-reference/functions/not-found">`notFound`</Link> error                                             |
+| `redirect`    | `Function`                                                                                     | Throws <Link type="external" href="https://nextjs.org/docs/app/api-reference/functions/redirect">`redirect`</Link> error                                              |

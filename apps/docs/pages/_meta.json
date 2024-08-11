@@ -11,6 +11,12 @@
       "footer": false
     }
   },
+  "config": {
+    "title": "ActionRouter config",
+    "theme": {
+      "footer": false
+    }
+  },
   "concepts": {
     "title": "Concepts (10-15 mins)",
     "theme": {
@@ -28,6 +34,12 @@
       "footer": false
     }
   },
+  "api-reference": {
+    "title": "API Reference",
+    "theme": {
+      "footer": false
+    }
+  },
   "types": {
     "title": "Types",
     "theme": {
@@ -36,10 +48,6 @@
   },
   "examples": {
     "title": "Examples",
-    "type": "page"
-  },
-  "api": {
-    "title": "API Reference",
     "type": "page"
   }
 }
