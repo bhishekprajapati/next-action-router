@@ -1,1 +1,1 @@
-export { ActionRouter } from "./ActionRouter";
+export { ActionRouter } from "./router";

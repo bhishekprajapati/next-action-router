@@ -1,14 +1,27 @@
 import "server-only";
+
+import {
+  DEFAULT_ACTION_HANDLER_NAME,
+  DEFAULT_LOGGING_LEVELS,
+  DEFAULT_MIDDLEWARE_NAME,
+  DEFAULT_ROUTER_NAME,
+  INITIAL_MIDDLEWARE_STACK,
+  INTIAL_SCHEMA,
+  INTIAL_SCHEMA_IDX,
+} from "./constants";
+import { ActionPath } from "./path";
+import { ActionLogger, type ActionLoggerLevels } from "./logger";
+import { createMiddleware } from "./middleware";
+import { ActionError, InternalError, UnHandledError } from "./errors";
+import { createActionHandler } from "./handler";
+
+import { colors } from "consola/utils";
 import { z, ZodTypeAny, type ZodSchema } from "zod";
 import { cookies, headers } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect";
 import { isNotFoundError } from "next/dist/client/components/not-found";
-
-export const BASE_CONTEXT = { inputs: null };
-export const INTIAL_SCHEMA_IDX = -1;
-export const INTIAL_SCHEMA = null;
-export const INITIAL_MIDDLEWARE_STACK = [];
+import { getActionTraceString } from "./utils";
 
 // #region Types
 // type utils
@@ -82,10 +95,14 @@ type ActionResponse<TErrorCodes> = {
 /**
  * Read more: Docs: [`Middlewares`](https://next-action-router.netlify.app/concepts/middlewares)
  */
-type ActionMiddleware<TContext, TReturn> = (
-  request: ActionRequest<TContext>
+type ActionMiddleware<TContext, TErrorCodes, TReturn> = (
+  request: ActionRequest<TContext>,
+  {} // write here
 ) => Promise<TReturn>;
 
+type ActionMiddlewareOptions = {
+  name: string;
+};
 /**
  * Read more: Docs: [`Action Handler`](https://next-action-router.netlify.app/concepts/action-handler)
  */
@@ -94,7 +111,17 @@ type ActionHandler<TContext, TErrorCodes extends PropertyKey, TReturn> = (
   response: ActionResponse<TErrorCodes>
 ) => Promise<TReturn>;
 
+type ActionHandlerOptions = {
+  name: string;
+};
+
 type ActionRouterConfig<TErrorCodes extends Record<string, string>> = {
+  /**
+   * Name of a router instance (optional)
+   * @default "root"
+   */
+  name?: string | "root";
+  logging?: ActionLoggerLevels;
   error: {
     codes: TErrorCodes;
   };
@@ -121,22 +148,37 @@ export class ActionRouter<
   /**
    * @private This is a private property. Do not touch this!
    */
-  _schemaIdx: number = INTIAL_SCHEMA_IDX;
-  /**
-   * @private This is a private property. Do not touch this!
-   */
-  _schema: ZodSchema<any> | null = INTIAL_SCHEMA;
-  /**
-   * @private This is a private property. Do not touch this!
-   */
-  _middlewares: Array<any> = INITIAL_MIDDLEWARE_STACK;
+  _internals: {
+    middlewares: Array<any>;
+    schema: ZodSchema<any> | null;
+    schemaIdx: number;
+    path: ActionPath;
+    log: ActionLogger;
+  };
   /**
    * @private This is a private property. Do not touch this!
    */
   private _config: ActionRouterConfig<TErrorCodes>;
 
-  constructor(config?: ActionRouterConfig<TErrorCodes>) {
-    this._config = config ?? ({ error: { codes: {} } } as any);
+  constructor(
+    config: ActionRouterConfig<TErrorCodes> = { error: { codes: {} as any } }
+  ) {
+    this._config = config;
+
+    // setting config defaults
+    const {
+      name = DEFAULT_ROUTER_NAME,
+      logging: levels = DEFAULT_LOGGING_LEVELS,
+    } = this._config;
+
+    // setting internal state defaults
+    this._internals = {
+      middlewares: INITIAL_MIDDLEWARE_STACK,
+      schema: INTIAL_SCHEMA,
+      schemaIdx: INTIAL_SCHEMA_IDX,
+      path: new ActionPath(name),
+      log: new ActionLogger(levels),
+    };
   }
 
   /**
@@ -145,9 +187,14 @@ export class ActionRouter<
    * Read more: Docs: [`Input Validation`](https://next-action-router.netlify.app/concepts/middlewares)
    */
   use<TReturn extends { inputs: any } = { inputs: null }>(
-    middleware: ActionMiddleware<TContext, TReturn>
+    middleware: ActionMiddleware<TContext, TErrorCodes, TReturn>,
+    options: ActionMiddlewareOptions = { name: DEFAULT_MIDDLEWARE_NAME }
   ): ActionRouter<TErrorCodes, TReturn> {
-    this._middlewares.push(middleware);
+    this.path.push("common", options.name);
+    this.middlewares.push(createMiddleware(middleware, this.path.clone()));
+    this._internals.log.info(
+      `Action middleware registered by name ${options.name} on path: ${this.path.toString()}`
+    );
     return this as any;
   }
 
@@ -162,28 +209,31 @@ export class ActionRouter<
   input<T extends ZodTypeAny>(
     schema: T
   ): InputReturnType<TContext, TErrorCodes, T> {
-    if (this._schema) {
+    if (this.schema) {
       throw Error(
         "Only one input call is allowed in a single action router chain."
       );
     }
-    this._schema = schema;
-    this._schemaIdx = this._middlewares.length;
+    this._internals.schema = schema;
+    this._internals.schemaIdx = this.middlewares.length;
+    this._internals.log.info(`Action input on path: ${this.path.toString()}`);
     return this as any;
   }
 
   /**
-   * Executes the whole middleware stack and returns
-   * the final context
+   * @returns final context for action handler
    */
   private async executeMiddlewareStack(
     params: TContext["inputs"],
     cookies: NextCookies,
     headers: NextHeaders
   ): Promise<TContext> {
+    const { schema, schemaIdx } = this._internals;
+    const middlewares = this.middlewares;
+
     // only if schema exists
-    const hasSchema = !!this._schema;
-    const shouldValidateIntially = this._schemaIdx === 0;
+    const hasSchema = !!schema;
+    const shouldValidateIntially = schemaIdx === 0;
 
     // flag to keep track if inputs are already verified
     // during the execution of the middlewares
@@ -192,18 +242,20 @@ export class ActionRouter<
 
     // validate inputs if schema is registered before all the middlewares
     if (hasSchema && shouldValidateIntially) {
-      initialInput = await this._schema?.parseAsync(params);
+      initialInput = await schema?.parseAsync(params);
       hasValidated = true;
     }
 
     // starting out with the initial context
     let context: any = { inputs: initialInput };
-    for (let i = 0; i < this._middlewares.length; ++i) {
-      if (hasSchema && !hasValidated && i === this._schemaIdx) {
-        // @ts-expect-error
-        context["inputs"] = await this._schema.parseAsync(params);
+    for (let i = 0; i < middlewares.length; ++i) {
+      if (hasSchema && !hasValidated && i === schemaIdx) {
+        context["inputs"] = await this.schema?.parseAsync(params);
       }
-      const middleware = this._middlewares[i];
+      const middleware = middlewares[i];
+
+      this.log.debug(colors.bgBlue("Input Context "), context);
+
       // each middleware gets the output of the last middleware
       // as input context through args
       context = await middleware({ context, cookies, headers });
@@ -211,12 +263,8 @@ export class ActionRouter<
 
     // if input schema is registered and directly `run` is called
     // then also we need validated inputs
-    if (
-      hasSchema &&
-      !hasValidated &&
-      this._schemaIdx >= this._middlewares.length
-    ) {
-      context["inputs"] = await this._schema?.parseAsync(params);
+    if (hasSchema && !hasValidated && schemaIdx >= middlewares.length) {
+      context["inputs"] = await schema?.parseAsync(params);
     }
     return context;
   }
@@ -226,31 +274,35 @@ export class ActionRouter<
    *
    * Read more: Docs: [`run`](https://next-action-router.netlify.app/concepts/action-handler)
    */
-  run<TReturn>(handler: ActionHandler<TContext, keyof TErrorCodes, TReturn>) {
-    return async (params: TContext["inputs"]) => {
-      // create action response object
-      const actionResponse: ActionResponse<keyof TErrorCodes> = {
-        data: (payload) => ({ success: true, data: payload }),
-        error: (code, message) => ({
-          success: false,
-          error: {
-            code,
-            message: message ?? (this._config.error.codes[code] as any),
-          },
-        }),
-        createError: (code, message) => ({
-          success: false,
-          error: {
-            code,
-            message,
-          },
-        }),
-        redirect,
-        notFound,
-      };
+  run<TReturn>(
+    handler: ActionHandler<TContext, keyof TErrorCodes, TReturn>,
+    options: ActionHandlerOptions = { name: DEFAULT_ACTION_HANDLER_NAME }
+  ) {
+    this.path.push("common", options.name);
 
+    //  shared response helper object
+    const actionResponse: ActionResponse<keyof TErrorCodes> = {
+      data: (payload) => ({ success: true, data: payload }),
+      error: (code, message) => ({
+        success: false,
+        error: {
+          code,
+          message: message ?? (this._config.error.codes[code] as any),
+        },
+      }),
+      createError: (code, message) => ({
+        success: false,
+        error: {
+          code,
+          message,
+        },
+      }),
+      redirect,
+      notFound,
+    };
+
+    return async (params: TContext["inputs"]) => {
       try {
-        // action request object creation
         const nextHeaders = headers();
         const nextCookies = cookies();
         const context = await this.executeMiddlewareStack(
@@ -258,20 +310,37 @@ export class ActionRouter<
           nextCookies,
           nextHeaders
         );
+
+        // unique request object
         const actionRequest: ActionRequest<TContext> = {
           context,
           cookies: nextCookies,
           headers: nextHeaders,
         };
 
-        // 3. invoke handler with injected dependencies
-        return handler(actionRequest, actionResponse);
-      } catch (err) {
-        // 4. handle errors gracefully
+        this.log.debug(colors.bgBlue("Input Context "), "\n", context);
 
-        // redirect error and not found error must be re-thrown
+        const wrappedHandler = createActionHandler(handler, this.path.clone());
+        return await wrappedHandler(actionRequest, actionResponse);
+      } catch (err) {
         if (isRedirectError(err) || isNotFoundError(err)) {
           throw err;
+        }
+
+        // explicitly thrown errors by devs
+        if (err instanceof ActionError) {
+          return actionResponse.error(err.code, err.message);
+        }
+
+        if (err instanceof UnHandledError) {
+          this._internals.log.error(err);
+          // fallback to internal server error
+        }
+
+        if (err instanceof InternalError) {
+          this._internals.log.error(err);
+        } else {
+          this._internals.log.error(new InternalError(err));
         }
 
         return actionResponse.createError(
@@ -295,11 +364,34 @@ export class ActionRouter<
 
     // step-2: copy all the internal state
     branch._config = this._config;
-    branch._middlewares = [...this._middlewares];
-    branch._schema = this._schema;
-    branch._schemaIdx = this._schemaIdx;
+    branch._internals = {
+      middlewares: [...this.middlewares],
+      schema: this.schema,
+      schemaIdx: this._internals.schemaIdx,
+      path: this.path.clone().push("branch"),
+      log: this.log,
+    };
 
+    this._internals.log.info(
+      `Branching off from the path ${this.path.toString()}`
+    );
     return branch as any;
+  }
+
+  private get middlewares() {
+    return this._internals.middlewares;
+  }
+
+  private get schema() {
+    return this._internals.schema;
+  }
+
+  private get log() {
+    return this._internals.log;
+  }
+
+  private get path() {
+    return this._internals.path;
   }
 }
 // #endregion Implementaion end
