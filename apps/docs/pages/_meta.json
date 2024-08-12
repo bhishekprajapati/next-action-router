@@ -11,8 +11,8 @@
       "footer": false
     }
   },
-  "config": {
-    "title": "ActionRouter config",
+  "quick-start": {
+    "title": "Quick start",
     "theme": {
       "footer": false
     }
@@ -23,13 +23,16 @@
       "footer": false
     }
   },
-  "usage": {
-    "title": "Usage",
+  "cookbook": {
+    "title": "Cookbook"
+  },
+  "logging": {
     "theme": {
       "footer": false
     }
   },
-  "logging": {
+  "config": {
+    "title": "ActionRouter config",
     "theme": {
       "footer": false
     }
@@ -45,9 +48,5 @@
     "theme": {
       "footer": false
     }
-  },
-  "examples": {
-    "title": "Examples",
-    "type": "page"
   }
 }
