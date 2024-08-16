@@ -21,10 +21,7 @@ const formatTags = (...tags: string[]) =>
 const formatErrorMessage = (tags: string[] = [], message = "", path = "") =>
   `${formatTags(...tags)}: ${message} \n\n${colors.bgRed(" ActionPath ")} ${path} \n${actionPathSymbolHelp()}`;
 
-export type ActionLogType = Union.Select<
-  LogType,
-  "info" | "error" | "warn" | "debug"
->;
+export type ActionLogType = "info" | "error" | "warn" | "debug";
 export type ActionLoggerLevels = Array<{ level: ActionLogType }>;
 
 export class ActionLogger {

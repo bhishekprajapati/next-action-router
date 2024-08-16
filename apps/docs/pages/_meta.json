@@ -48,5 +48,11 @@
     "theme": {
       "footer": false
     }
+  },
+  "changelog": {
+    "title": "Changelog",
+    "theme": {
+      "footer": false
+    }
   }
 }

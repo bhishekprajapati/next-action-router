@@ -1,11 +1,20 @@
 # Internal Type reference
 
-## ActionRouterConfig
+## Config
 
 ```ts
-type ActionRouterConfig<TErrorCodes> = {
-  error: {
-    codes: TErrorCodes;
+type ActionLogType = "info" | "error" | "warn" | "debug";
+type ActionLoggerLevels = Array<{ level: ActionLogType }>;
+type BaseErrorMap = { "internal-server-error": string };
+
+type ActionRouterConfig<TErrorCode extends string> = {
+  /**
+   * Name of a router instance
+   */
+  name?: string | DefaultRouterName;
+  logging?: ActionLoggerLevels;
+  error?: {
+    codes: Record<TErrorCode, string> & Partial<BaseErrorMap>;
   };
 };
 ```
@@ -45,17 +54,32 @@ type ActionErrorResponse<TCode> = {
   };
 };
 
-type ActionResponse<TErrorCodes> = {
+type ActionResponse<TErrorCode extends string> = {
+  /**
+   * @returns formatted(JSON) data response
+   */
   data: <TData>(data: TData) => ActionSuccessResponse<TData>;
-  error: <TCode extends TErrorCodes>(
+  /**
+   * @returns formatted(JSON) error response
+   */
+  error: <TCode extends TErrorCode>(
     code: TCode,
     message?: string
   ) => ActionErrorResponse<TCode>;
+  /**
+   * @returns Helper to create error with new code just in time.
+   */
   createError: <T extends string>(
     code: T,
     message: string
   ) => ActionErrorResponse<T>;
+  /**
+   * @see {redirect}
+   */
   redirect: typeof redirect;
+  /**
+   * @see {notFound}
+   */
   notFound: typeof notFound;
 };
 ```
@@ -63,16 +87,24 @@ type ActionResponse<TErrorCodes> = {
 ## ActionMiddleware
 
 ```ts
-type ActionMiddleware<TContext, TReturn> = (
+type ActionMiddleware<TContext, TErrorCode, TReturn> = (
   request: ActionRequest<TContext>
 ) => Promise<TReturn>;
+
+type ActionMiddlewareOptions = {
+  name: string;
+};
 ```
 
 ## ActionHandler
 
 ```ts
-type ActionHandler<TContext, TErrorCodes, TReturn> = (
+type ActionHandler<TContext, TErrorCode extends string, TReturn> = (
   request: ActionRequest<TContext>,
-  response: ActionResponse<TErrorCodes>
+  response: ActionResponse<TErrorCode>
 ) => Promise<TReturn>;
+
+type ActionHandlerOptions = {
+  name: string;
+};
 ```

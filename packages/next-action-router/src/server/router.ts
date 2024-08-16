@@ -1,6 +1,14 @@
 import "server-only";
+import { colors } from "consola/utils";
+import { z, ZodTypeAny, type ZodSchema } from "zod";
+import { cookies, headers } from "next/headers";
+import { redirect, notFound } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect";
+import { isNotFoundError } from "next/dist/client/components/not-found";
 
 import {
+  BASE_ERROR_MAP,
+  BaseErrorMap,
   DEFAULT_ACTION_HANDLER_NAME,
   DEFAULT_LOGGING_LEVELS,
   DEFAULT_MIDDLEWARE_NAME,
@@ -10,17 +18,11 @@ import {
   INTIAL_SCHEMA_IDX,
 } from "./constants";
 import { ActionPath } from "./path";
-import { ActionLogger, type ActionLoggerLevels } from "./logger";
+import { ActionLogger } from "./logger";
 import { createMiddleware } from "./middleware";
 import { ActionError, InternalError, UnHandledError } from "./errors";
 import { createActionHandler } from "./handler";
-
-import { colors } from "consola/utils";
-import { z, ZodTypeAny, type ZodSchema } from "zod";
-import { cookies, headers } from "next/headers";
-import { redirect, notFound } from "next/navigation";
-import { isRedirectError } from "next/dist/client/components/redirect";
-import { isNotFoundError } from "next/dist/client/components/not-found";
+import type { ActionRouterConfig } from "./config";
 
 // #region Types
 // type utils
@@ -35,7 +37,7 @@ type NextHeaders = ReturnType<typeof headers>;
  * like `context`, `cookies` and `headers`.
  */
 type ActionRequest<TContext> = {
-  context: TContext;
+  context: Readonly<TContext>;
   headers: NextHeaders;
   cookies: NextCookies;
 };
@@ -62,7 +64,7 @@ type ActionErrorResponse<TCode> = {
 /**
  * `ActionResponse` object is a collection of helper methods.
  */
-type ActionResponse<TErrorCodes> = {
+type ActionResponse<TErrorCode extends string> = {
   /**
    * @returns formatted(JSON) data response
    */
@@ -70,7 +72,7 @@ type ActionResponse<TErrorCodes> = {
   /**
    * @returns formatted(JSON) error response
    */
-  error: <TCode extends TErrorCodes>(
+  error: <TCode extends TErrorCode>(
     code: TCode,
     message?: string
   ) => ActionErrorResponse<TCode>;
@@ -94,9 +96,8 @@ type ActionResponse<TErrorCodes> = {
 /**
  * Read more: Docs: [`Middlewares`](https://next-action-router.netlify.app/concepts/middlewares)
  */
-type ActionMiddleware<TContext, TErrorCodes, TReturn> = (
-  request: ActionRequest<TContext>,
-  {} // write here
+type ActionMiddleware<TContext, TErrorCode, TReturn> = (
+  request: ActionRequest<TContext>
 ) => Promise<TReturn>;
 
 type ActionMiddlewareOptions = {
@@ -105,43 +106,34 @@ type ActionMiddlewareOptions = {
 /**
  * Read more: Docs: [`Action Handler`](https://next-action-router.netlify.app/concepts/action-handler)
  */
-type ActionHandler<TContext, TErrorCodes extends PropertyKey, TReturn> = (
+type ActionHandler<TContext, TErrorCode extends string, TReturn> = (
   request: ActionRequest<TContext>,
-  response: ActionResponse<TErrorCodes>
+  response: ActionResponse<TErrorCode>
 ) => Promise<TReturn>;
 
 type ActionHandlerOptions = {
   name: string;
 };
 
-type ActionRouterConfig<TErrorCodes extends Record<string, string>> = {
-  /**
-   * Name of a router instance (optional)
-   * @default "root"
-   */
-  name?: string | "root";
-  logging?: ActionLoggerLevels;
-  error: {
-    codes: TErrorCodes;
-  };
-};
-
 type InputReturnType<
   TContext extends { inputs: any },
-  TErrorCodes extends Record<string, string>,
+  TErrorCode extends string,
   T extends ZodTypeAny,
 > = Omit<
   ActionRouter<
-    TErrorCodes,
+    TErrorCode,
     ReplaceKeyValue<TContext, "inputs", Readonly<z.infer<T>>>
   >,
   "input" | "branch"
 >;
+
+type MergeErrorCodes<T extends string> = keyof (Record<T, string> &
+  BaseErrorMap);
 // #endregion Types end
 
 // #region Implementation
 export class ActionRouter<
-  TErrorCodes extends Record<string, string> = {},
+  TDefinedErrorCodes extends string = keyof BaseErrorMap,
   TContext extends { inputs: any } = { inputs: void },
 > {
   /**
@@ -157,18 +149,23 @@ export class ActionRouter<
   /**
    * @private This is a private property. Do not touch this!
    */
-  private _config: ActionRouterConfig<TErrorCodes>;
+  private _config: Required<ActionRouterConfig<TDefinedErrorCodes>>;
 
-  constructor(
-    config: ActionRouterConfig<TErrorCodes> = { error: { codes: {} as any } }
-  ) {
-    this._config = config;
+  constructor(config?: ActionRouterConfig<TDefinedErrorCodes>) {
+    const { name = DEFAULT_ROUTER_NAME, logging = DEFAULT_LOGGING_LEVELS } =
+      config ?? {};
 
-    // setting config defaults
-    const {
-      name = DEFAULT_ROUTER_NAME,
-      logging: levels = DEFAULT_LOGGING_LEVELS,
-    } = this._config;
+    this._config = {
+      name,
+      logging,
+      error: {
+        // @ts-expect-error
+        codes: {
+          ...BASE_ERROR_MAP,
+          ...(config?.error?.codes ?? {}),
+        },
+      },
+    };
 
     // setting internal state defaults
     this._internals = {
@@ -176,7 +173,7 @@ export class ActionRouter<
       schema: INTIAL_SCHEMA,
       schemaIdx: INTIAL_SCHEMA_IDX,
       path: new ActionPath(name),
-      log: new ActionLogger(levels),
+      log: new ActionLogger(logging),
     };
   }
 
@@ -186,9 +183,13 @@ export class ActionRouter<
    * Read more: Docs: [`Input Validation`](https://next-action-router.netlify.app/concepts/middlewares)
    */
   use<TReturn extends { inputs: any } = { inputs: null }>(
-    middleware: ActionMiddleware<TContext, TErrorCodes, TReturn>,
+    middleware: ActionMiddleware<
+      TContext,
+      MergeErrorCodes<TDefinedErrorCodes>,
+      TReturn
+    >,
     options: ActionMiddlewareOptions = { name: DEFAULT_MIDDLEWARE_NAME }
-  ): ActionRouter<TErrorCodes, TReturn> {
+  ): ActionRouter<MergeErrorCodes<TDefinedErrorCodes>, TReturn> {
     this.path.push("common", options.name);
     this.middlewares.push(createMiddleware(middleware, this.path.clone()));
     this._internals.log.info(
@@ -207,7 +208,7 @@ export class ActionRouter<
    */
   input<T extends ZodTypeAny>(
     schema: T
-  ): InputReturnType<TContext, TErrorCodes, T> {
+  ): InputReturnType<TContext, MergeErrorCodes<TDefinedErrorCodes>, T> {
     if (this.schema) {
       throw Error(
         "Only one input call is allowed in a single action router chain."
@@ -274,31 +275,38 @@ export class ActionRouter<
    * Read more: Docs: [`run`](https://next-action-router.netlify.app/concepts/action-handler)
    */
   run<TReturn>(
-    handler: ActionHandler<TContext, keyof TErrorCodes, TReturn>,
+    handler: ActionHandler<
+      TContext,
+      MergeErrorCodes<TDefinedErrorCodes>,
+      TReturn
+    >,
     options: ActionHandlerOptions = { name: DEFAULT_ACTION_HANDLER_NAME }
   ) {
     this.path.push("common", options.name);
 
     //  shared response helper object
-    const actionResponse: ActionResponse<keyof TErrorCodes> = {
-      data: (payload) => ({ success: true, data: payload }),
-      error: (code, message) => ({
-        success: false,
-        error: {
-          code,
-          message: message ?? (this._config.error.codes[code] as any),
+    const actionResponse: ActionResponse<MergeErrorCodes<TDefinedErrorCodes>> =
+      {
+        data: (payload) => ({ success: true, data: payload }),
+        error: (code, message) => {
+          return {
+            success: false,
+            error: {
+              code,
+              message: message ?? this._config.error.codes[code],
+            },
+          };
         },
-      }),
-      createError: (code, message) => ({
-        success: false,
-        error: {
-          code,
-          message,
-        },
-      }),
-      redirect,
-      notFound,
-    };
+        createError: (code, message) => ({
+          success: false,
+          error: {
+            code,
+            message,
+          },
+        }),
+        redirect,
+        notFound,
+      };
 
     return async (params: TContext["inputs"]) => {
       try {
@@ -326,9 +334,13 @@ export class ActionRouter<
           throw err;
         }
 
-        // explicitly thrown errors by devs
+        // // explicitly thrown errors by devs
         if (err instanceof ActionError) {
-          return actionResponse.error(err.code, err.message);
+          return actionResponse.createError(
+            // WORKAROUND: to avoid inferred error codes of action as any
+            err.code as keyof BaseErrorMap,
+            err.message
+          );
         }
 
         if (err instanceof UnHandledError) {
@@ -342,10 +354,7 @@ export class ActionRouter<
           this._internals.log.error(new InternalError(err));
         }
 
-        return actionResponse.createError(
-          "internal-server-error",
-          "server has encountered an error"
-        );
+        return actionResponse.error("internal-server-error");
       }
     };
   }
@@ -377,18 +386,30 @@ export class ActionRouter<
     return branch as any;
   }
 
+  /**
+   * @private This is a private property. Do not touch this!
+   */
   private get middlewares() {
     return this._internals.middlewares;
   }
 
+  /**
+   * @private This is a private property. Do not touch this!
+   */
   private get schema() {
     return this._internals.schema;
   }
 
+  /**
+   * @private This is a private property. Do not touch this!
+   */
   private get log() {
     return this._internals.log;
   }
 
+  /**
+   * @private This is a private property. Do not touch this!
+   */
   private get path() {
     return this._internals.path;
   }
