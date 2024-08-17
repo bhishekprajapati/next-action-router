@@ -11,9 +11,7 @@
 
 ```ts
 // --snip--
-
 const router = new ActionRouter({
-  error: { codes: {} }
   // only logs `info` and `error` logs
   logging: [{ level: "error" }, { level: "info" }],
 });
@@ -23,16 +21,16 @@ const router = new ActionRouter({
 
 ```ts
 // --snip--
-
-const levels =
-  process.env.NODE_ENV === "production"
-  ? [{ level: "error" }, { level: "info" }]
-  : [{ level: "error" }, { level: "info" }, { level: "warn" }, { level: "debug" }];
-
 const router = new ActionRouter({
-  error: { codes: {} }
   // only logs `info` and `error` logs
-  logging: levels,
+  logging: process.env.NODE_ENV === "production"
+    ? [{ level: "error" }, { level: "info" }]
+    : [
+        { level: "error" },
+        { level: "info" },
+        { level: "warn" },
+        { level: "debug" },
+      ];
 });
 ```
 
@@ -40,9 +38,7 @@ const router = new ActionRouter({
 
 ```ts
 // --snip--
-
 const router = new ActionRouter({
-  error: { codes: {} }
   logging: [], // pass in empty array
 });
 ```
