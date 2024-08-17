@@ -22,7 +22,6 @@ const router = new ActionRouter({
 ```ts
 // --snip--
 const router = new ActionRouter({
-  // only logs `info` and `error` logs
   logging: process.env.NODE_ENV === "production"
     ? [{ level: "error" }, { level: "info" }]
     : [
