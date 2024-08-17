@@ -337,7 +337,7 @@ export class ActionRouter<
         // // explicitly thrown errors by devs
         if (err instanceof ActionError) {
           return actionResponse.createError(
-            // WORKAROUND: to avoid inferred error codes of action as any
+            // WORKAROUND: to avoid inferred error codes of exported server action to be inferred as `any`
             err.code as keyof BaseErrorMap,
             err.message
           );
