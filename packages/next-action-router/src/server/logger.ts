@@ -77,15 +77,15 @@ export class ActionLogger {
       err.message = formatErrorMessage(
         [this.pkgName, "InternalError"],
         err.message,
-        err.path
+        err.path,
       );
       consola.error(err);
       consola.warn(
         colors.bold(
           colors.yellow(
-            "This is more likely a next-action-router's internal error. Please report it by opening a PR at https://github.com/bhishekprajapati/next-action-router"
-          )
-        )
+            "This is more likely a next-action-router's internal error. Please create a issue at https://github.com/bhishekprajapati/next-action-router",
+          ),
+        ),
       );
       return;
     }
@@ -94,7 +94,7 @@ export class ActionLogger {
       err.message = formatErrorMessage(
         [this.pkgName, "UnhandledError", err.type],
         err.message,
-        err.path
+        err.path,
       );
 
       consola.error(err);
